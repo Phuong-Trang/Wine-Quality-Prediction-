@@ -1,1 +1,83 @@
+library(MASS)
+
+setwd("E:\\R\\final") # MUST_CHANGE_TO_RUN
+
+# các biểu đồ chạy ra phải zoom lên mới đọc hiểu được 
+
+########## XỬ LÝ DỮ LIỆU VANG TRẮNG ##########
+
+whiteDat = read.table("winequality-white.csv", sep = ";", header = T)
+View(whiteDat)
+
+
+## Liệt kê thông số 
+dim(whiteDat) # lấy tổng số bản ghi và số trường dữ liệu 
+sapply(whiteDat, class) # lấy kiểu của từng trường dữ liệu 
+summary(whiteDat) # thống kê tóm tắt từng trường dữ liệu (min, Q1, median, mean, Q3, max) -> IQR = Q3 - Q1 
+
+
+## Xem xét dữ liệu dưới 3 góc độ  
+# sử dụng boxplot (biểu đồ hộp chia theo các "tứ phân vị") để xem sự phân bố dữ liệu của từng trường (link boxplot: https://bom.so/pjtUet)
+oldpar = par(mfrow = c(2,6))  # par() dùng để vẽ nhiều biểu đồ cùng lúc, mfrow = c(2,6) ~ vẽ trên 2 hàng, 6 biểu đồ/hàng 
+for ( i in 1:11 ) {
+  boxplot(whiteDat[[i]])
+  mtext(names(whiteDat)[i], cex = 0.7, side = 1, line = 2) 
+    # hiện tên trường, các thông số bên dưới để format cho đẹp 
+    # cex = 0.7: kích cỡ chữ ở mức 70% so với default 
+    # side = 1: hiện chữ phía dưới biểu đồ
+    # line = 2: chữ cách ra một dòng so với biểu đồ    
+}
+
+# sử dụng scatter plot matrix (ma trận đồ thị phân tán) để đánh giá sự tương quan giữa các chất (link scatter plot: https://bom.so/6RU3HJ)
+pairs(whiteDat[, -grep("quality", colnames(whiteDat))]) # df[,-grep..] là lấy ra bộ dữ liệu đã bỏ đi cột "quality"
+
+# sử dụng truehist() từ MASS, cũng là histogram (biểu đồ tần suất) nhưng có thêm ước tính mật độ xác suất (tần suất/tổng phần tử)
+oldpar = par(mfrow = c(4,3))
+for ( i in 1:12 ) {
+  truehist(whiteDat[[i]], xlab = names(whiteDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(whiteDat[[i]]),3)))
+    # signif(x, 3): làm tròn giá trị x đến 3 chữ số sau dấu thập phân   
+}
+
+
+## Tìm chính xác vị trí outlier (giá trị bất thường) dựa trên 2 tiêu chuẩn (link: https://bom.so/b1M3Up)
+outliers = c()
+
+# Tiêu chuẩn 1: nằm ngoài khoảng A = [Q1 - 1.5 * IQR, Q3 + 1.5 * IQR])
+for ( i in 1:11 ) {
+  b1 = boxplot.stats(whiteDat[[i]]) # link hàm boxplot.stats(): https://bom.so/Hh6iyf
+  stats = b1$stats # dãy 5 gtri (Q1 - 1.5 * IQR, Q1, median, Q3, Q3 + 1.5 * IQR) tương ứng với trường 
+  
+  # tìm các hàng chứa outlier quá thấp mà chưa có trong mảng outliers 
+  bottom_outlier_rows = which(whiteDat[[i]] < stats[1])
+  outliers = c(outliers , bottom_outlier_rows[ !bottom_outlier_rows %in% outliers ] )
+  
+  # tìm các hàng chứa outlier quá cao mà chưa có trong mảng outliers
+  top_outlier_rows = which(whiteDat[[i]] > stats[5])
+  outliers = c(outliers , top_outlier_rows[ !top_outlier_rows %in% outliers ] )
+}
+
+# Tiêu chuẩn 2: căn cứ vào khoảng cách Cook 
+# Note: trong nhiều tài liệu gọi loại giá trị bất thường này là influential observation/point ~ các giá trị nằm trong khoảng A nhưng ảnh hưởng  
+# trực tiếp mạnh mẽ đến hệ số góc/độ dốc (slope) của đường biểu diễn trong bài toán hồi quy tuyến tính -> ảnh hưởng kết quả đánh giá 
+# link tham khảo thêm (Chi tiết về cách loại bỏ influential points bằng Cooks distance: https://bom.so/ZJO9YV)
+
+mod = lm(quality ~ ., data = whiteDat) # tạo một mô hình hồi quy tuyến tính 
+      # (quality ~ . tức là biểu diễn quality dưới dạng hàm số của tất cả các biến còn lại)
+cooksd = cooks.distance(mod) 
+coutliers = as.numeric(rownames(whiteDat[cooksd > 4 * mean(cooksd, na.rm=T), ]))
+      # as.numeric(): chuyển dữ liệu sang kiểu số 
+
+outliers = c(outliers , coutliers[ !coutliers %in% outliers ] ) # thêm vào outliers các hàng chứa influential observation chưa nằm trong outliers 
+
+## làm sạch dữ liệu 
+cleanWhiteDat = whiteDat[-outliers, ] # DỮ LIỆU SẠCH 
+
+# vẽ lại histogram để thấy các biểu đồ đã được đưa từ dạng lệch dương về dạng chuẩn 
+oldpar = par(mfrow=c(4,3))
+for ( i in 1:12 ) {
+  truehist(cleanWhiteDat[[i]], xlab = names(cleanWhiteDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(cleanWhiteDat[[i]]),3)))
+}
+
+########## XỬ LÝ DỮ LIỆU VANG ĐỎ ##########
+redDat = read.table("winequality-red.csv", sep = ",", header = T)
 
