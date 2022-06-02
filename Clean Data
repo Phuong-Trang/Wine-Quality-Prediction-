@@ -64,7 +64,11 @@ for ( i in 1:11 ) {
 mod = lm(quality ~ ., data = whiteDat) # tạo một mô hình hồi quy tuyến tính 
       # (quality ~ . tức là biểu diễn quality dưới dạng hàm số của tất cả các biến còn lại)
 cooksd = cooks.distance(mod) 
-coutliers = as.numeric(rownames(whiteDat[cooksd > 4 * mean(cooksd, na.rm=T), ]))
+coutliers = as.numeric(rownames(whiteDat[cooksd > 4 * mean(cooksd, na.rm = T), ]))
+      # có nhiều loại ngưỡng cho việc cut-off bằng Cook distance, có thể dùng 1 trong những công thức sau:
+            # 4/n (most commonly seen)
+            # 4/(n - k - 1) , n - observations number, k - predictors number 
+            # 4 * mean(vectors of values of cook's distance) (cách đang dùng)
       # as.numeric(): chuyển dữ liệu sang kiểu số 
 
 outliers = c(outliers , coutliers[ !coutliers %in% outliers ] ) # thêm vào outliers các hàng chứa influential observation chưa nằm trong outliers 
