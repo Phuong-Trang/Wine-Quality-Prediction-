@@ -57,7 +57,7 @@ for ( i in 1:11 ) {
 }
 
 # Tiêu chuẩn 2: căn cứ vào khoảng cách Cook 
-# Note: trong nhiều tài liệu gọi loại giá trị bất thường này là influential observation/point ~ các giá trị nằm trong khoảng A nhưng ảnh hưởng  
+# Note: trong nhiều tài liệu gọi loại giá trị bất thường này là influential observation/point ~ các giá trị có thể nằm trong khoảng A nhưng ảnh hưởng  
 # trực tiếp mạnh mẽ đến hệ số góc/độ dốc (slope) của đường biểu diễn trong bài toán hồi quy tuyến tính -> ảnh hưởng kết quả đánh giá 
 # link tham khảo thêm (Chi tiết về cách loại bỏ influential points bằng Cooks distance: https://bom.so/ZJO9YV)
 
