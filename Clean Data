@@ -1,6 +1,8 @@
 library(MASS)
+library(leaps)
+library(ggplot2)
 
-setwd("E:\\R\\final") # MUST_CHANGE_TO_RUN
+setwd("E:\\R\\final")
 
 # các biểu đồ chạy ra phải zoom lên mới đọc hiểu được 
 
@@ -95,4 +97,47 @@ for ( i in 1:12 ) {
   truehist(cleanredDat[[i]], xlab = names(cleanredDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(cleanredDat[[i]]),3)))
 }
 
-plot(lm(quality~citric.acid, data=redDat), which=c(5))
+testRegsubsets = function(dataset, yColName, methods, metrics) {
+  # Perform the given best subset selection methods and plot the given corresponding model
+  # metrics and the variable membership for each models
+  #
+  # Args:
+  #   dataset: The data frame on which to perform subset selection methods
+  #   yColName: The name of the outcome variable
+  #   methods: Vector. The list of the subset selection methods to perform
+  #   metrics: Vector. The list of metrics to plot
+  #
+  # Returns:
+  #   Plot the given model metrics and the variable membership for each models
+  summaryMetrics = NULL
+  whichAll = list()
+  for (myMthd in methods) {
+    rsRes = regsubsets(dataset[, yColName]~ ., dataset[, -which(names(dataset) %in% yColName)], method = myMthd, nvmax = 11)
+    summRes = summary(rsRes)
+    whichAll[[myMthd]] = summRes$which
+    for (metricName in metrics) {
+      summaryMetrics = rbind(summaryMetrics,
+                             data.frame(method = myMthd, metric = metricName,
+                                        nvars = 1:length(summRes[[metricName]]),
+                                        value = summRes[[metricName]]))
+    }
+  }
+  
+  # Plot variable membership for each models
+  old.par = par(mfrow = c(1,2), ps = 16, mar = c(5,7,2,1))
+  for (myMthd in names(whichAll)) {
+    image(1:nrow(whichAll[[myMthd]]),
+          1:ncol(whichAll[[myMthd]]),
+          whichAll[[myMthd]], xlab = 'N(vars)', ylab = '',
+          xaxt = 'n', yaxt = 'n', breaks = c(-0.5, 0.5, 1.5),
+          col = c('white', 'lightblue1'), main = myMthd)
+    axis(1, 1:nrow(whichAll[[myMthd]]), rownames(whichAll[[myMthd]]))
+    axis(2, 1:ncol(whichAll[[myMthd]]), colnames(whichAll[[myMthd]]), las = 2)
+  }
+  par(old.par)
+  
+  # Plot the model metrics
+  ggplot(summaryMetrics, aes(x = nvars, y = value, shape = method, colour = method)) + geom_path() + geom_point() + facet_wrap(~metric, scales = "free") + theme(legend.position = "top")
+}
+
+testRegsubsets(dataset = cleanredDat, yColName = "quality", methods = c("exhaustive", "backward", "forward"), metrics = c("rsq", "rss", "adjr2", "cp", "bic"))
