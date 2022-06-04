@@ -1,6 +1,7 @@
 library(MASS)
 library(ggplot2)
 library(ggcorrplot)
+library(randomForest)
 
 setwd("E:\\R\\final") # CHANGE! 
 
@@ -77,3 +78,11 @@ draw("density")
 draw("pH")
 draw("sulphates")
 draw("alcohol")
+
+redwineRF = randomForest(factor(good.wine)~.-quality,cleanRedDat)
+redwineRF
+
+importance = importance(redwineRF) 
+varImportance = data.frame(Variables = row.names(importance), Importance = round(importance[ ,'MeanDecreaseGini'],2))
+ggplot(varImportance, aes(x = Importance, y = Variables, fill = Importance)) +
+  geom_bar(stat='identity') + theme_classic()
