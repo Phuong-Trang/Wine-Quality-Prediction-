@@ -94,8 +94,9 @@ for ( i in 1:12 ) {
   truehist(cleanRedDat[[i]], xlab = names(cleanRedDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(cleanRedDat[[i]]),3)))
 }
 
-# vẽ biểu đồ nhiệt theo hệ số tương quan của từng cặp trong 12 trường 
+# vẽ biểu đồ nhiệt từ ggcorrplot theo hệ số tương quan của từng cặp trong 12 trường 
 ggcorrplot(cor(cleanRedDat), type = "lower", lab = TRUE, insig = "blank")
+
 
 ## đánh giá tương quan từng đặc tính với chất lượng  
 cleanRedDat$good.wine = ifelse(cleanRedDat$quality >= 7,1,0)
@@ -111,7 +112,7 @@ draw = function(yColName) {
     + xlab(label = paste(yColName, "level"))
     + ggtitle(paste("Distribution of", yColName, "levels"))
     + theme_classic() # phông trắng không có gridlines (đường kẻ lưới)
-} 
+} # sử dụng các phương thức trong ggplot2
 
 draw("fixed.acidity")
 draw("volatile.acidity")
@@ -126,3 +127,4 @@ draw("sulphates")
 draw("alcohol")
 
 
+########## ĐỌC KĨ NHA MỌI NGƯỜI ##########
