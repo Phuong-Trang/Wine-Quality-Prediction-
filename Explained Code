@@ -1,8 +1,9 @@
 library(MASS)
 library(ggplot2)
 library(ggcorrplot)
+library(randomForest)
 
-setwd("E:\\R\\final") # MUST CHANGE TO RUN 
+setwd("E:\\R\\final")
 
 # các biểu đồ chạy ra phải zoom lên mới đọc hiểu được 
 
@@ -57,6 +58,11 @@ for ( i in 1:11 ) {
   outliers = c(outliers , top_outlier_rows[ !top_outlier_rows %in% outliers ] )
 }
 
+model2 = lm(quality ~ ., data = redDat[-outliers,])
+v = summary(model2)$r.squared
+# r-Squared: a statistical measure in a regression model that determines the proportion of variance in the dependent variable that can be explained by the independent variable. 
+# --> r-squared shows how well the data fit the regression model (the goodness of fit).
+
 # Tiêu chuẩn 2: căn cứ vào khoảng cách Cook 
 # Note: trong nhiều tài liệu gọi loại giá trị bất thường này là influential observation/point ~ các giá trị nằm trong khoảng A nhưng ảnh hưởng  
 # trực tiếp mạnh mẽ đến hệ số góc/độ dốc (slope) của đường biểu diễn trong bài toán hồi quy tuyến tính -> ảnh hưởng kết quả đánh giá 
@@ -92,7 +98,6 @@ for ( i in 1:12 ) {
 # vẽ biểu đồ nhiệt từ ggcorrplot theo hệ số tương quan của từng cặp trong 12 trường 
 ggcorrplot(cor(cleanRedDat), type = "lower", lab = TRUE, insig = "blank")
 
-
 ## đánh giá tương quan từng đặc tính với chất lượng  
 cleanRedDat$good.wine = ifelse(cleanRedDat$quality >= 7,1,0)
 
@@ -121,5 +126,13 @@ draw("pH")
 draw("sulphates")
 draw("alcohol")
 
+## phân tích đâu là đặc tính quan trọng nhất quyết định chất lượng rượu 
+redwineRF = randomForest(factor(good.wine)~.-quality,cleanRedDat)
+redwineRF
 
-########## ĐỌC KĨ NHA MỌI NGƯỜI ##########
+# Xây dựng biểu đồ đánh giá chính xác độ quan trọng của từng đặc tính tới chất lượng rượu
+importance = importance(redwineRF) # tính mức độ quan trọng với mô hình dự đoán 
+varImportance = data.frame(Variables = row.names(importance), Importance = round(importance[ ,'MeanDecreaseGini'],2))
+ggplot(varImportance, aes(x = Importance, y = Variables, fill = Importance)) +
+  geom_bar(stat='identity') + theme_classic()
+
