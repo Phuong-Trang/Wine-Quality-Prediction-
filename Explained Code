@@ -2,7 +2,7 @@ library(MASS)
 library(ggplot2)
 library(ggcorrplot)
 
-setwd("E:\\R\\final")
+setwd("E:\\R\\final") # MUST CHANGE TO RUN 
 
 # các biểu đồ chạy ra phải zoom lên mới đọc hiểu được 
 
@@ -56,11 +56,6 @@ for ( i in 1:11 ) {
   top_outlier_rows = which(redDat[[i]] > stats[5])
   outliers = c(outliers , top_outlier_rows[ !top_outlier_rows %in% outliers ] )
 }
-
-model2 = lm(quality ~ ., data = redDat[-outliers,])
-v = summary(model2)$r.squared
-# r-Squared: a statistical measure in a regression model that determines the proportion of variance in the dependent variable that can be explained by the independent variable. 
-# --> r-squared shows how well the data fit the regression model (the goodness of fit).
 
 # Tiêu chuẩn 2: căn cứ vào khoảng cách Cook 
 # Note: trong nhiều tài liệu gọi loại giá trị bất thường này là influential observation/point ~ các giá trị nằm trong khoảng A nhưng ảnh hưởng  
