@@ -84,5 +84,5 @@ redwineRF
 
 importance = importance(redwineRF) 
 varImportance = data.frame(Variables = row.names(importance), Importance = round(importance[ ,'MeanDecreaseGini'],2))
-ggplot(varImportance, aes(x = Importance, y = Variables, fill = Importance)) +
-  geom_bar(stat='identity') + theme_classic()
+ggplot(varImportance, aes(x = Importance, y = reorder(Variables, Importance), fill = Importance)) +
+  geom_bar(stat='identity') + ylab(label = "Variables") + theme_classic()
