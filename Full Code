@@ -1,1 +1,79 @@
+library(MASS)
+library(ggplot2)
+library(ggcorrplot)
 
+setwd("E:\\R\\final") # CHANGE! 
+
+redDat = read.table("winequality-red.csv", sep = ",", header = T)
+View(redDat)
+
+dim(redDat) 
+sapply(redDat, class)  
+summary(redDat) 
+
+oldpar = par(mfrow = c(2,6)) 
+for ( i in 1:11 ) {
+  boxplot(redDat[[i]])
+  mtext(names(redDat)[i], cex = 0.7, side = 1, line = 2)   
+}
+
+pairs(redDat[, -grep("quality", colnames(redDat))]) 
+
+oldpar = par(mfrow = c(3,4))
+for ( i in 1:12 ) {
+  truehist(redDat[[i]], xlab = names(redDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(redDat[[i]]),3)))
+}
+
+outliers = c()
+
+for ( i in 1:11 ) {
+  b1 = boxplot.stats(redDat[[i]])
+  stats = b1$stats 
+  
+  bottom_outlier_rows = which(redDat[[i]] < stats[1])
+  outliers = c(outliers , bottom_outlier_rows[ !bottom_outlier_rows %in% outliers ] )
+  
+  top_outlier_rows = which(redDat[[i]] > stats[5])
+  outliers = c(outliers , top_outlier_rows[ !top_outlier_rows %in% outliers ] )
+}
+
+mod = lm(quality ~ ., data = redDat)
+cooksd = cooks.distance(mod) 
+coutliers = as.numeric(rownames(redDat[cooksd > 4 * mean(cooksd, na.rm = T), ]))
+outliers = c(outliers , coutliers[ !coutliers %in% outliers ] )
+
+cleanRedDat = redDat[-outliers, ] # DỮ LIỆU SẠCH 
+
+dim(cleanRedDat)
+
+oldpar = par(mfrow=c(3,4))
+for ( i in 1:12 ) {
+  truehist(cleanRedDat[[i]], xlab = names(cleanRedDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(cleanRedDat[[i]]),3)))
+}
+
+ggcorrplot(cor(cleanRedDat), type = "lower", lab = TRUE, insig = "blank")
+
+cleanRedDat$good.wine = ifelse(cleanRedDat$quality >= 7,1,0)
+
+draw = function(yColName) {
+  dat = cleanRedDat[[yColName]]  
+  ggplot(cleanRedDat,aes(x=dat,fill=factor(good.wine))) 
+    + geom_density(alpha=0.25) 
+    + geom_vline(aes(xintercept=mean(dat[good.wine==0],na.rm=T)), color="red")  
+    + geom_vline(aes(xintercept=mean(dat[good.wine==1],na.rm=T)), color="blue") 
+    + xlab(label = paste(yColName, "level"))
+    + ggtitle(paste("Distribution of", yColName, "levels"))
+    + theme_classic() 
+} 
+
+draw("fixed.acidity")
+draw("volatile.acidity")
+draw("citric.acid")
+draw("residual.sugar")
+draw("chlorides")
+draw("free.sulfur.dioxide")
+draw("total.sulfur.dioxide")
+draw("density")
+draw("pH")
+draw("sulphates")
+draw("alcohol")
