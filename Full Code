@@ -55,16 +55,20 @@ for ( i in 1:12 ) {
 ggcorrplot(cor(cleanRedDat), type = "lower", lab = TRUE, insig = "blank")
 
 cleanRedDat$good.wine = ifelse(cleanRedDat$quality >= 7,1,0)
+badWine = cleanRedDat[cleanRedDat$good.wine == 0, ]
+goodWine = cleanRedDat[cleanRedDat$good.wine == 1, ]
 
 draw = function(yColName) {
-  dat = cleanRedDat[[yColName]]  
-  ggplot(cleanRedDat,aes(x=dat,fill=factor(good.wine))) 
-    + geom_density(alpha=0.25) 
-    + geom_vline(aes(xintercept=mean(dat[good.wine==0],na.rm=T)), color="red")  
-    + geom_vline(aes(xintercept=mean(dat[good.wine==1],na.rm=T)), color="blue") 
-    + xlab(label = paste(yColName, "level"))
-    + ggtitle(paste("Distribution of", yColName, "levels"))
-    + theme_classic() 
+  dat = cleanRedDat[[yColName]] 
+  mean0 = mean(badWine[[yColName]])
+  mean1 = mean(goodWine[[yColName]])
+  
+  ggplot(cleanRedDat,aes(x=dat,fill=factor(good.wine))) + geom_density(alpha=0.25) + 
+    geom_vline(xintercept=mean0, color="red") + geom_text(x=mean0, y=0, label=round(mean0,3), size=3) +
+    geom_vline(xintercept=mean1, color="blue") + geom_text(x=mean1, y=0.02,label=round(mean1,3), size=3) +
+    xlab(label = paste(yColName, "level")) + 
+    ggtitle(paste("Distribution of", yColName, "levels")) + 
+    theme_classic() 
 } 
 
 draw("fixed.acidity")
@@ -86,3 +90,4 @@ importance = importance(redwineRF)
 varImportance = data.frame(Variables = row.names(importance), Importance = round(importance[ ,'MeanDecreaseGini'],2))
 ggplot(varImportance, aes(x = Importance, y = reorder(Variables, Importance), fill = Importance)) +
   geom_bar(stat='identity') + ylab(label = "Variables") + theme_classic()
+  
