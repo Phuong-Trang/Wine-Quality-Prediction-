@@ -37,7 +37,7 @@ pairs(redDat[, -grep("quality", colnames(redDat))]) # df[,-grep..] là lấy ra 
 oldpar = par(mfrow = c(3,4))
 for ( i in 1:12 ) {
   truehist(redDat[[i]], xlab = names(redDat)[i], col = 'lightgreen', main = paste("Average =", signif(mean(redDat[[i]]),3)))
-    # signif(x, 3): làm tròn giá trị x đến 3 chữ số sau dấu thập phân   
+  # signif(x, 3): làm tròn giá trị x đến 3 chữ số sau dấu thập phân   
 }
 
 
@@ -69,14 +69,14 @@ v = summary(model2)$r.squared
 # link tham khảo thêm (Chi tiết về cách loại bỏ influential points bằng Cooks distance: https://bom.so/ZJO9YV)
 
 mod = lm(quality ~ ., data = redDat) # tạo một mô hình hồi quy tuyến tính 
-      # (quality ~ . tức là biểu diễn quality dưới dạng hàm số của tất cả các biến còn lại)
+# (quality ~ . tức là biểu diễn quality dưới dạng hàm số của tất cả các biến còn lại)
 cooksd = cooks.distance(mod) 
 coutliers = as.numeric(rownames(redDat[cooksd > 4 * mean(cooksd, na.rm = T), ]))
-      # có nhiều loại ngưỡng cho việc cut-off bằng Cook distance, có thể dùng 1 trong những công thức sau:
-            # 4/n (most commonly seen)
-            # 4/(n - k - 1) , n - observations number, k - predictors number 
-            # 4 * mean(vectors of values of cook's distance) (cách đang dùng)
-      # as.numeric(): chuyển dữ liệu sang kiểu số 
+  # có nhiều loại ngưỡng cho việc cut-off bằng Cook distance, có thể dùng 1 trong những công thức sau:
+    # 4/n (most commonly seen)
+    # 4/(n - k - 1) , n - observations number, k - predictors number 
+    # 4 * mean(vectors of values of cook's distance) (cách đang dùng)
+  # as.numeric(): chuyển dữ liệu sang kiểu số 
 coutliers
 outliers = c(outliers , coutliers[ !coutliers %in% outliers ] ) # thêm vào outliers các hàng chứa influential observation chưa nằm trong outliers 
 
@@ -100,19 +100,28 @@ ggcorrplot(cor(cleanRedDat), type = "lower", lab = TRUE, insig = "blank")
 
 ## đánh giá tương quan từng đặc tính với chất lượng  
 cleanRedDat$good.wine = ifelse(cleanRedDat$quality >= 7,1,0)
+badWine = cleanRedDat[cleanRedDat$good.wine == 0, ]
+goodWine = cleanRedDat[cleanRedDat$good.wine == 1, ]
 
 draw = function(yColName) {
   dat = cleanRedDat[[yColName]] # lấy ra trường đặc tính cần đánh giá 
-  ggplot(cleanRedDat,aes(x=dat,fill=factor(good.wine))) 
-        # data đầu vào, aes(): gán trực tiếp trục x là giá trị từ bộ dữ liệu
-        #  fill=factor(good.wine): tô đồ thị theo phân loại: tốt (1) - xanh; không tốt (0) - đỏ
-    + geom_density(alpha=0.25) # độ trong suốt màu trên đồ thị là 0.25
-    + geom_vline(aes(xintercept=mean(dat[good.wine==0],na.rm=T)), color="red")  # vẽ đường màu đỏ tại giá trị mean của trường ứng với phân loại 0
-    + geom_vline(aes(xintercept=mean(dat[good.wine==1],na.rm=T)), color="blue") # vẽ đường màu xanh tại giá trị mean của trường ứng với phân loại 1
-    + xlab(label = paste(yColName, "level"))
-    + ggtitle(paste("Distribution of", yColName, "levels"))
-    + theme_classic() # phông trắng không có gridlines (đường kẻ lưới)
-} # sử dụng các phương thức trong ggplot2
+  mean0 = mean(badWine[[yColName]]) # trung bình đặc tính đó của rượu không tốt
+  mean1 = mean(goodWine[[yColName]]) # trung bình đặc tính đó của rượu không tốt
+  
+  ggplot(cleanRedDat,aes(x=dat,fill=factor(good.wine))) + 
+      # data đầu vào, aes(): gán trực tiếp trục x là giá trị từ bộ dữ liệu
+      #  fill=factor(good.wine): tô đồ thị theo phân loại: tốt (1) - xanh; không tốt (0) - đỏ
+    geom_density(alpha=0.25) + # độ trong suốt màu trên đồ thị là 0.25
+    geom_vline(xintercept=mean0, color="red") + 
+    geom_text(x=mean0, y=0, label=round(mean0,3), size=3) +
+      # vẽ đường màu đỏ tại giá trị mean của trường ứng với phân loại 0
+    geom_vline(xintercept=mean1, color="blue") + 
+    geom_text(x=mean1, y=0.02,label=round(mean1,3), size=3) +
+      # vẽ đường màu xanh tại giá trị mean của trường ứng với phân loại 1
+    xlab(label = paste(yColName, "level")) + 
+    ggtitle(paste("Distribution of", yColName, "levels")) + 
+    theme_classic() # phông trắng không có gridlines (đường kẻ lưới)
+} # sử dụng các phương thức trong ggplot2 
 
 draw("fixed.acidity")
 draw("volatile.acidity")
